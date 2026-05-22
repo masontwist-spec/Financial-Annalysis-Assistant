@@ -87,6 +87,8 @@ const getFinalDecision = (score, concernFailGates) => {
   return 'Research More'
 }
 
+const isGateComplete = (gate) => gate.score != null && gate.confidenceLevel && gate.status !== 'Neutral'
+
 const formatGateLine = (gate) => {
   const score = gate.score != null ? `${gate.score}/10` : 'TBD'
   const confidence = gate.confidenceLevel ? gate.confidenceLevel : 'unassigned'
@@ -184,6 +186,8 @@ function CompanyAnalysis() {
   const gatesPassed = gateEvaluations.filter((gate) => ['Strong Pass', 'Pass'].includes(gate.status)).length
   const concernFailGates = gateEvaluations.filter((gate) => ['Concern', 'Fail'].includes(gate.status)).length
   const finalDecision = getFinalDecision(compositeScore, concernFailGates)
+  const completedGates = gateEvaluations.filter(isGateComplete).length
+  const progressPercent = Math.round((completedGates / gateEvaluations.length) * 100)
   const competitorsList = useMemo(
     () =>
       companyInfo.competitors
@@ -211,6 +215,35 @@ function CompanyAnalysis() {
     }
   }, [generatedMemo, memoEdited])
 
+  useEffect(() => {
+    const currentAnalysis = {
+      id: analysisId,
+      gateEvaluations,
+      companyInfo,
+      investmentMemo: memoEdited ? investmentMemo : generatedMemo,
+      memoEdited,
+      savedAt,
+      compositeScore,
+      classification,
+    }
+
+    saveCurrentAnalysis(currentAnalysis)
+
+    if (analysisId) {
+      upsertWatchlistAnalysis(currentAnalysis)
+    }
+  }, [
+    analysisId,
+    gateEvaluations,
+    companyInfo,
+    investmentMemo,
+    memoEdited,
+    generatedMemo,
+    savedAt,
+    compositeScore,
+    classification,
+  ])
+
   const updateMemo = (field, value) => {
     setMemoEdited(true)
     setInvestmentMemo((currentMemo) => ({
@@ -222,6 +255,7 @@ function CompanyAnalysis() {
   const refreshMemo = () => {
     setInvestmentMemo(generatedMemo)
     setMemoEdited(false)
+    setStorageMessage('Memo preview generated from current inputs.')
   }
 
   const createAnalysisId = () => {
@@ -266,7 +300,7 @@ function CompanyAnalysis() {
     setInvestmentMemo(defaultInvestmentMemo)
     setMemoEdited(false)
     setSavedAt(null)
-    setStorageMessage('Current analysis cleared.')
+    setStorageMessage('Analysis reset.')
   }
 
   const savedAtLabel = savedAt ? new Date(savedAt).toLocaleString() : 'Not saved yet'
@@ -276,27 +310,32 @@ function CompanyAnalysis() {
       <div className="pixel-panel p-6 sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.25em] text-neutral-700">Company Analysis</p>
-            <h1 className="pixel-title mt-3 text-4xl font-black uppercase">Evaluate a business through investment gates</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Analysis Workspace</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              Build a professional equity research report
+            </h1>
+            <p className="mt-3 max-w-3xl text-slate-600">
+              Start with company context, score each investment gate, and generate a memo preview from your own inputs.
+            </p>
           </div>
-          <div className="border-2 border-black bg-white p-4 shadow-pixel">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Local storage</p>
-            <p className="mt-2 text-sm font-bold text-neutral-800">Last saved: {savedAtLabel}</p>
-            {storageMessage ? <p className="mt-1 text-sm font-black text-neutral-900">{storageMessage}</p> : null}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Local workspace</p>
+            <p className="mt-2 text-sm font-medium text-slate-700">Last saved: {savedAtLabel}</p>
+            {storageMessage ? <p className="mt-1 text-sm font-semibold text-emerald-700">{storageMessage}</p> : null}
             <div className="mt-4 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={saveAnalysis}
-                className="border-2 border-black bg-[#c9ff7a] px-4 py-2 text-sm font-black uppercase tracking-[0.12em] shadow-[3px_3px_0_#111111] transition hover:-translate-y-0.5"
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
               >
                 Save analysis
               </button>
               <button
                 type="button"
                 onClick={clearAnalysis}
-                className="border-2 border-black bg-white px-4 py-2 text-sm font-black uppercase tracking-[0.12em] shadow-[3px_3px_0_#111111] transition hover:-translate-y-0.5 hover:bg-[#ff8a8a]"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-rose-50 hover:text-rose-700"
               >
-                Clear current
+                Reset Analysis
               </button>
             </div>
           </div>
@@ -304,136 +343,133 @@ function CompanyAnalysis() {
       </div>
 
       <section className="pixel-panel overflow-hidden">
-        <div className="flex items-center justify-between border-b-2 border-black bg-[#fffbe6] px-4 py-3">
-          <p className="pixel-title text-xl font-black lowercase">company_profile</p>
-          <div className="flex gap-2">
-            <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
-            <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
-            <span className="h-4 w-4 rounded-full border-2 border-black bg-black" />
-          </div>
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Research report setup</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Company input</h2>
+          <p className="mt-1 text-sm text-slate-600">Manually enter the basic company context before scoring gates.</p>
         </div>
 
         <div className="grid gap-6 p-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Ticker</span>
+            <label className="space-y-2">
+              <span className="block text-sm font-semibold text-slate-700">Ticker</span>
               <input
                 value={companyInfo.ticker}
                 onChange={(event) => updateCompanyInfo('ticker', event.target.value.toUpperCase())}
                 placeholder="AAPL"
-                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
 
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Company name</span>
+            <label className="space-y-2">
+              <span className="block text-sm font-semibold text-slate-700">Company name</span>
               <input
                 value={companyInfo.companyName}
                 onChange={(event) => updateCompanyInfo('companyName', event.target.value)}
                 placeholder="Apple Inc."
-                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
 
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Industry</span>
+            <label className="space-y-2">
+              <span className="block text-sm font-semibold text-slate-700">Industry</span>
               <input
                 value={companyInfo.industry}
                 onChange={(event) => updateCompanyInfo('industry', event.target.value)}
                 placeholder="Consumer Technology"
-                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
 
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Competitors</span>
+            <label className="space-y-2">
+              <span className="block text-sm font-semibold text-slate-700">Competitors</span>
               <input
                 value={companyInfo.competitors}
                 onChange={(event) => updateCompanyInfo('competitors', event.target.value)}
                 placeholder="MSFT, GOOGL, Samsung"
-                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
 
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Current price</span>
+            <label className="space-y-2">
+              <span className="block text-sm font-semibold text-slate-700">Current price</span>
               <input
                 value={companyInfo.currentPrice}
                 onChange={(event) => updateCompanyInfo('currentPrice', event.target.value)}
                 placeholder="$190.50"
-                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
 
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Market cap</span>
+            <label className="space-y-2">
+              <span className="block text-sm font-semibold text-slate-700">Market cap</span>
               <input
                 value={companyInfo.marketCap}
                 onChange={(event) => updateCompanyInfo('marketCap', event.target.value)}
                 placeholder="$2.9T"
-                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
 
-            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4 md:col-span-2">
-              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Brief personal thesis</span>
+            <label className="space-y-2 md:col-span-2">
+              <span className="block text-sm font-semibold text-slate-700">Brief personal thesis</span>
               <textarea
                 value={companyInfo.thesis}
                 onChange={(event) => updateCompanyInfo('thesis', event.target.value)}
                 rows="5"
                 placeholder="Why this company may deserve capital..."
-                className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+                className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </label>
           </div>
 
-          <aside className="border-2 border-black bg-white p-5 shadow-pixel">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Company snapshot</p>
+          <aside className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Company snapshot</p>
             <div className="mt-4 space-y-4">
               <div>
-                <p className="pixel-title text-4xl font-black uppercase">
+                <p className="text-4xl font-semibold uppercase text-slate-950">
                   {companyInfo.ticker || 'TICKER'}
                 </p>
-                <p className="mt-1 text-xl font-black">
+                <p className="mt-1 text-xl font-semibold text-slate-800">
                   {companyInfo.companyName || 'Company name'}
                 </p>
               </div>
 
               <dl className="grid gap-3">
-                <div className="border-2 border-black bg-[#fffbe6] p-3">
-                  <dt className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Industry</dt>
-                  <dd className="mt-1 font-black">{companyInfo.industry || 'Not entered'}</dd>
+                <div className="rounded-lg border border-slate-200 bg-white p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Industry</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">{companyInfo.industry || 'Not entered'}</dd>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="border-2 border-black bg-[#c9ff7a] p-3">
-                    <dt className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Price</dt>
-                    <dd className="mt-1 font-black">{companyInfo.currentPrice || 'TBD'}</dd>
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Price</dt>
+                    <dd className="mt-1 font-semibold text-slate-950">{companyInfo.currentPrice || 'TBD'}</dd>
                   </div>
-                  <div className="border-2 border-black bg-[#c9ff7a] p-3">
-                    <dt className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Market cap</dt>
-                    <dd className="mt-1 font-black">{companyInfo.marketCap || 'TBD'}</dd>
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Market cap</dt>
+                    <dd className="mt-1 font-semibold text-slate-950">{companyInfo.marketCap || 'TBD'}</dd>
                   </div>
                 </div>
               </dl>
 
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Competitors</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Competitors</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {competitorsList.length > 0 ? (
                     competitorsList.map((competitor) => (
-                      <span key={competitor} className="border-2 border-black bg-white px-3 py-1 text-sm font-black shadow-[2px_2px_0_#111111]">
+                      <span key={competitor} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-700">
                         {competitor}
                       </span>
                     ))
                   ) : (
-                    <span className="font-bold text-neutral-600">No competitors entered</span>
+                    <span className="text-sm font-medium text-slate-500">No competitors entered</span>
                   )}
                 </div>
               </div>
 
-              <div className="border-2 border-black bg-[#fffbe6] p-4">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Personal thesis</p>
-                <p className="mt-2 whitespace-pre-wrap font-bold text-neutral-900">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Personal thesis</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-700">
                   {companyInfo.thesis || 'No thesis entered yet.'}
                 </p>
               </div>
@@ -442,121 +478,165 @@ function CompanyAnalysis() {
         </div>
       </section>
 
-      <section className="pixel-panel overflow-hidden">
-        <div className="flex items-center justify-between border-b-2 border-black bg-[#c9ff7a] px-4 py-3">
-          <p className="pixel-title text-xl font-black lowercase">composite_score</p>
-          <div className="flex gap-2">
-            <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
-            <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
-            <span className="h-4 w-4 rounded-full border-2 border-black bg-black" />
+      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="pixel-panel p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Gate progress</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                {completedGates} of {gateEvaluations.length} gates complete
+              </h2>
+            </div>
+            <p className="text-4xl font-semibold text-emerald-700">{progressPercent}%</p>
           </div>
+          <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <p className="mt-3 text-sm text-slate-600">A gate is complete when it has a non-neutral status, score, and confidence level.</p>
         </div>
 
-        <div className="grid gap-4 p-6 lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
-          <div className="border-2 border-black bg-black p-5 text-[#fffdfa] shadow-pixel">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#c9ff7a]">Final score</p>
-            <p className="mt-3 text-6xl font-black leading-none">{compositeScore}</p>
-            <p className="mt-2 text-sm font-black uppercase tracking-[0.2em]">/ 100</p>
-          </div>
-
-          <div className="border-2 border-black bg-white p-5 shadow-pixel">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Classification</p>
-            <p className="mt-3 text-2xl font-black">{classification}</p>
-          </div>
-
-          <div className="border-2 border-black bg-white p-5 shadow-pixel">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Gates passed</p>
-            <p className="mt-3 text-5xl font-black">{gatesPassed}</p>
-            <p className="mt-2 font-bold text-neutral-800">Strong Pass or Pass</p>
-          </div>
-
-          <div className="border-2 border-black bg-[#fffbe6] p-5 shadow-pixel">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Concern / Fail</p>
-            <p className="mt-3 text-5xl font-black">{concernFailGates}</p>
-            <p className="mt-2 font-bold text-neutral-800">Gates needing attention</p>
+        <div className="pixel-panel p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Workspace controls</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={refreshMemo}
+              className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+            >
+              Generate Memo Preview
+            </button>
+            <button
+              type="button"
+              onClick={saveAnalysis}
+              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+            >
+              Save to Watchlist
+            </button>
+            <button
+              type="button"
+              onClick={clearAnalysis}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-rose-50 hover:text-rose-700"
+            >
+              Reset Analysis
+            </button>
           </div>
         </div>
       </section>
 
       <section className="pixel-panel overflow-hidden">
-        <div className="flex flex-col gap-3 border-b-2 border-black bg-[#fffbe6] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="pixel-title text-xl font-black lowercase">investment_memo</p>
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Composite score</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Investment quality summary</h2>
+        </div>
+
+        <div className="grid gap-4 p-6 lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
+          <div className="rounded-xl bg-slate-950 p-5 text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Final score</p>
+            <p className="mt-3 text-6xl font-semibold leading-none">{compositeScore}</p>
+            <p className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">/ 100</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Classification</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950">{classification}</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Gates passed</p>
+            <p className="mt-3 text-5xl font-semibold text-emerald-700">{gatesPassed}</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">Strong Pass or Pass</p>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Concern / Fail</p>
+            <p className="mt-3 text-5xl font-semibold text-amber-800">{concernFailGates}</p>
+            <p className="mt-2 text-sm font-medium text-amber-800">Gates needing attention</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="investment-memo" className="pixel-panel overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Investment memo</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Memo preview</h2>
+          </div>
           <button
             type="button"
             onClick={refreshMemo}
-            className="border-2 border-black bg-black px-4 py-2 text-sm font-black uppercase tracking-[0.12em] text-[#fffdfa] transition hover:bg-neutral-800"
+            className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
           >
-            Refresh draft
+            Generate Memo Preview
           </button>
         </div>
 
         <div className="grid gap-4 p-6 xl:grid-cols-2">
-          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Company overview</span>
+          <label className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="block text-sm font-semibold text-slate-700">Company overview</span>
             <textarea
               value={investmentMemo.companyOverview}
               onChange={(event) => updateMemo('companyOverview', event.target.value)}
               rows="4"
-              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </label>
 
-          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Final score & classification</span>
+          <label className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="block text-sm font-semibold text-slate-700">Final score & classification</span>
             <textarea
               value={investmentMemo.scoreSummary}
               onChange={(event) => updateMemo('scoreSummary', event.target.value)}
               rows="4"
-              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </label>
 
-          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4 xl:col-span-2">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Gate-by-gate summary</span>
+          <label className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 xl:col-span-2">
+            <span className="block text-sm font-semibold text-slate-700">Gate-by-gate summary</span>
             <textarea
               value={investmentMemo.gateSummary}
               onChange={(event) => updateMemo('gateSummary', event.target.value)}
               rows="8"
-              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </label>
 
-          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Bull thesis</span>
+          <label className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="block text-sm font-semibold text-slate-700">Bull thesis</span>
             <textarea
               value={investmentMemo.bullThesis}
               onChange={(event) => updateMemo('bullThesis', event.target.value)}
               rows="6"
-              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </label>
 
-          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Bear thesis</span>
+          <label className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="block text-sm font-semibold text-slate-700">Bear thesis</span>
             <textarea
               value={investmentMemo.bearThesis}
               onChange={(event) => updateMemo('bearThesis', event.target.value)}
               rows="6"
-              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </label>
 
-          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Key risks</span>
+          <label className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="block text-sm font-semibold text-slate-700">Key risks</span>
             <textarea
               value={investmentMemo.keyRisks}
               onChange={(event) => updateMemo('keyRisks', event.target.value)}
               rows="5"
-              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </label>
 
-          <label className="space-y-2 border-2 border-black bg-[#c9ff7a] p-4">
-            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Final decision</span>
+          <label className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <span className="block text-sm font-semibold text-emerald-800">Final decision</span>
             <select
               value={investmentMemo.finalDecision}
               onChange={(event) => updateMemo('finalDecision', event.target.value)}
-              className="w-full border-2 border-black bg-white px-3 py-2 font-black text-black outline-none focus:bg-[#fffbe6]"
+              className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 font-semibold text-slate-950 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             >
               {['Buy', 'Watchlist', 'Avoid', 'Research More'].map((decision) => (
                 <option key={decision} value={decision}>
@@ -564,7 +644,7 @@ function CompanyAnalysis() {
                 </option>
               ))}
             </select>
-            <p className="mt-4 border-2 border-black bg-white p-4 text-3xl font-black">{investmentMemo.finalDecision}</p>
+            <p className="mt-4 rounded-lg border border-emerald-200 bg-white p-4 text-3xl font-semibold text-emerald-800">{investmentMemo.finalDecision}</p>
           </label>
         </div>
       </section>
@@ -573,15 +653,21 @@ function CompanyAnalysis() {
         <div className="pixel-panel p-6 sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.25em] text-neutral-700">Gate checklist</p>
-              <h2 className="pixel-title mt-3 text-3xl font-black uppercase">Company gate review</h2>
-              <p className="mt-3 max-w-2xl font-bold text-neutral-800">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Gate checklist</p>
+              <h2 className="mt-3 text-3xl font-semibold text-slate-950">Company gate review</h2>
+              <p className="mt-3 max-w-2xl text-slate-600">
                 View all seven investment gates and drill into questions and metrics for each evaluation area.
               </p>
             </div>
-            <div className="border-2 border-black bg-white px-4 py-4 shadow-pixel">
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Status guide</p>
-              <p className="mt-3 text-sm font-black text-neutral-900">Strong Pass, Pass, Neutral, Concern, Fail</p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Status guide</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                <span className="rounded-full bg-emerald-900 px-3 py-1 text-white">Strong Pass</span>
+                <span className="rounded-full bg-emerald-600 px-3 py-1 text-white">Pass</span>
+                <span className="rounded-full bg-slate-200 px-3 py-1 text-slate-700">Neutral</span>
+                <span className="rounded-full bg-amber-500 px-3 py-1 text-slate-950">Concern</span>
+                <span className="rounded-full bg-red-600 px-3 py-1 text-white">Fail</span>
+              </div>
             </div>
           </div>
         </div>
