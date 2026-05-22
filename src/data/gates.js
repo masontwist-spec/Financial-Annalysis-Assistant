@@ -1,0 +1,115 @@
+const createGate = ({
+  id,
+  title,
+  shortDescription,
+  coreQuestion,
+  keyQuestions = [],
+  keyMetrics = [],
+  score = null,
+  status = 'not started',
+  notes = '',
+  redFlags = [],
+  confidenceLevel = null,
+}) => ({
+  id,
+  title,
+  shortDescription,
+  coreQuestion,
+  keyQuestions,
+  keyMetrics,
+  score,
+  status,
+  notes,
+  redFlags,
+  confidenceLevel,
+})
+
+export const gates = [
+  createGate({
+    id: 'industry-durability',
+    title: 'Industry Durability',
+    shortDescription: 'Evaluate whether the company operates in a durable, long-lasting industry.',
+    coreQuestion: 'Can this industry sustain growth and returns over a multi-decade horizon?',
+    keyQuestions: [
+      'Is the market secular or cyclical?',
+      'How exposed is the industry to technological disruption?',
+      'Does the industry benefit from long-term structural tailwinds?',
+    ],
+    keyMetrics: ['Market growth rate', 'Industry margin profile', 'barriers to entry'],
+  }),
+  createGate({
+    id: 'competitive-advantage',
+    title: 'Competitive Advantage / Moat',
+    shortDescription: 'Assess the strength and durability of the company’s competitive advantages.',
+    coreQuestion: 'Does the company have a sustainable moat that protects profits and market position?',
+    keyQuestions: [
+      'What sources of advantage does the company have?',
+      'How defensible are those advantages over time?',
+      'How easily can competitors erode the moat?',
+    ],
+    keyMetrics: ['Return on invested capital', 'market share', 'switching costs'],
+  }),
+  createGate({
+    id: 'business-model-quality',
+    title: 'Business Model Quality',
+    shortDescription: 'Review the logic, scalability, and resilience of the company’s business model.',
+    coreQuestion: 'Is the business model clear, repeatable, and capable of generating durable cash flow?',
+    keyQuestions: [
+      'How predictable are revenue and margin streams?',
+      'Does the model scale efficiently?',
+      'Are there significant revenue concentration risks?',
+    ],
+    keyMetrics: ['gross margin', 'free cash flow conversion', 'customer retention'],
+  }),
+  createGate({
+    id: 'management-capital-allocation',
+    title: 'Management & Capital Allocation',
+    shortDescription: 'Judge the quality and alignment of management’s decisions and capital allocation.',
+    coreQuestion: 'Does management allocate capital with shareholder value creation as the priority?',
+    keyQuestions: [
+      'Does management have a track record of smart investments?',
+      'Are incentives aligned with long-term shareholders?',
+      'How transparent and accountable is the leadership team?',
+    ],
+    keyMetrics: ['ROIC trends', 'insider ownership', 'share buyback discipline'],
+  }),
+  createGate({
+    id: 'financial-strength',
+    title: 'Financial Strength',
+    shortDescription: 'Analyze the balance sheet, liquidity, and financial flexibility of the business.',
+    coreQuestion: 'Can the company withstand stress and invest through cycles without destroying value?',
+    keyQuestions: [
+      'What is the leverage profile?',
+      'How much liquidity is available in a downturn?',
+      'Is the balance sheet conservatively structured?',
+    ],
+    keyMetrics: ['net debt / EBITDA', 'current ratio', 'interest coverage'],
+  }),
+  createGate({
+    id: 'valuation',
+    title: 'Valuation',
+    shortDescription: 'Determine whether the price appropriately reflects the company’s quality and growth expectations.',
+    coreQuestion: 'Is the current valuation attractive relative to risk and long-term earnings power?',
+    keyQuestions: [
+      'What assumptions are embedded in the current price?',
+      'How does valuation compare to peers and history?',
+      'Does the margin of safety exist?',
+    ],
+    keyMetrics: ['P/E', 'EV/EBITDA', 'Discount to intrinsic value'],
+  }),
+  createGate({
+    id: 'risk-assessment',
+    title: 'Risk Assessment',
+    shortDescription: 'Identify the main downside risks and scenarios that could weaken the thesis.',
+    coreQuestion: 'What are the key risks and how likely are they to materially impact the investment?',
+    keyQuestions: [
+      'What are the biggest execution risks?',
+      'How exposed is the company to macro or regulatory shocks?',
+      'What are the contingency plans if the thesis changes?',
+    ],
+    keyMetrics: ['operational risk factors', 'regulatory exposure', 'scenario downside'],
+  }),
+]
+
+export const gateStatuses = ['not started', 'in progress', 'complete']
+export const confidenceLevels = ['low', 'medium', 'high']
