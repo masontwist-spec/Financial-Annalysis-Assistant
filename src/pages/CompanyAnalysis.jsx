@@ -11,8 +11,7 @@ import {
 } from '../utils/analysisStorage'
 import {
   getFinancialSnapshot,
-  getKeyMetrics,
-  getValuationMetrics,
+  mockFinancialSnapshot,
 } from '../services/financialDataService'
 
 const gateWeights = {
@@ -306,6 +305,9 @@ function CompanyAnalysis() {
   const [investmentMemo, setInvestmentMemo] = useState(initialAnalysis.investmentMemo)
   const [savedAt, setSavedAt] = useState(initialAnalysis.savedAt)
   const [storageMessage, setStorageMessage] = useState(initialAnalysis.savedAt ? 'Saved analysis loaded.' : '')
+  const [financialSnapshot, setFinancialSnapshot] = useState(mockFinancialSnapshot)
+  const [financialDataLoading, setFinancialDataLoading] = useState(false)
+  const [financialDataError, setFinancialDataError] = useState('')
 
   useEffect(() => {
     setAnalysisId(initialAnalysis.id)
@@ -352,12 +354,9 @@ function CompanyAnalysis() {
         .filter(Boolean),
     [companyInfo.competitors],
   )
-  const financialSnapshot = useMemo(() => getFinancialSnapshot(companyInfo.ticker), [companyInfo.ticker])
-  const keyMetrics = useMemo(() => getKeyMetrics(companyInfo.ticker), [companyInfo.ticker])
-  const valuationMetrics = useMemo(() => getValuationMetrics(companyInfo.ticker), [companyInfo.ticker])
   const suggestedEvidenceByGate = useMemo(
-    () => buildSuggestedEvidence({ ...keyMetrics, ...valuationMetrics }),
-    [keyMetrics, valuationMetrics],
+    () => buildSuggestedEvidence(financialSnapshot),
+    [financialSnapshot],
   )
   const generatedMemo = useMemo(
     () =>
@@ -377,6 +376,21 @@ function CompanyAnalysis() {
       setInvestmentMemo(generatedMemo)
     }
   }, [generatedMemo, memoEdited])
+
+  const loadFinancialData = async () => {
+    setFinancialDataLoading(true)
+    setFinancialDataError('')
+
+    const snapshot = await getFinancialSnapshot(companyInfo.ticker)
+
+    setFinancialSnapshot(snapshot)
+    setFinancialDataError(snapshot.error ?? '')
+    setFinancialDataLoading(false)
+  }
+
+  useEffect(() => {
+    loadFinancialData()
+  }, [companyInfo.ticker])
 
   useEffect(() => {
     const currentAnalysis = {
@@ -463,10 +477,15 @@ function CompanyAnalysis() {
     setInvestmentMemo(defaultInvestmentMemo)
     setMemoEdited(false)
     setSavedAt(null)
+    setFinancialSnapshot(mockFinancialSnapshot)
+    setFinancialDataError('')
     setStorageMessage('Analysis reset.')
   }
 
   const savedAtLabel = savedAt ? new Date(savedAt).toLocaleString() : 'Not saved yet'
+  const financialLastUpdatedLabel = financialSnapshot.lastUpdated
+    ? new Date(financialSnapshot.lastUpdated).toLocaleString()
+    : 'Not loaded yet'
 
   return (
     <div className="space-y-8">
@@ -649,13 +668,42 @@ function CompanyAnalysis() {
               {companyInfo.ticker || companyInfo.companyName ? `${companyInfo.ticker || companyInfo.companyName} fundamentals` : 'Mock fundamentals'}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              A placeholder financial profile shaped for future API integration.
+              Live-ready financial profile with mock fallback when the API is unavailable.
             </p>
           </div>
-          <span className="inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">
-            Data Source: {financialSnapshot.dataSource}
-          </span>
+          <div className="flex flex-col items-start gap-2 lg:items-end">
+            <span
+              className={`inline-flex w-fit rounded-full border px-3 py-1 text-sm font-semibold ${
+                financialSnapshot.dataSource === 'Financial Modeling Prep'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
+              }`}
+            >
+              Data Source: {financialSnapshot.dataSource}
+            </span>
+            <p className="text-xs font-medium text-slate-500">Last Updated: {financialLastUpdatedLabel}</p>
+            <button
+              type="button"
+              onClick={loadFinancialData}
+              disabled={financialDataLoading}
+              className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
+              {financialDataLoading ? 'Loading financial data...' : 'Refresh Financial Data'}
+            </button>
+          </div>
         </div>
+
+        {(financialDataLoading || financialDataError) && (
+          <div className="border-b border-slate-200 px-6 py-3">
+            {financialDataLoading ? (
+              <p className="text-sm font-semibold text-slate-600">Loading financial data...</p>
+            ) : (
+              <p className="text-sm font-semibold text-amber-700">
+                Financial Modeling Prep request failed. Showing mock fallback data. {financialDataError}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-4 p-6 xl:grid-cols-4">
           {financialSnapshotSections.map((section) => (
