@@ -1,12 +1,5 @@
-const gates = [
-  'Industry Durability',
-  'Competitive Advantage / Moat',
-  'Business Model Quality',
-  'Management & Capital Allocation',
-  'Financial Strength',
-  'Valuation',
-  'Risk Assessment',
-]
+import GateCard from '../components/GateCard'
+import { gates } from '../data/gates'
 
 function CompanyAnalysis() {
   return (
@@ -27,39 +20,28 @@ function CompanyAnalysis() {
         </div>
       </div>
 
-      <section className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
-        <aside className="rounded-3xl border border-slate-800 bg-slate-950/90 p-8 shadow-soft">
-          <p className="text-sm uppercase tracking-[0.25em] text-emerald-300/80">Gate checklist</p>
-          <p className="mt-3 text-slate-400">Review each gate to build a comprehensive company scorecard.</p>
-          <ul className="mt-6 space-y-4">
-            {gates.map((gate) => (
-              <li key={gate} className="rounded-3xl border border-slate-800 bg-slate-900/90 px-4 py-4">
-                <p className="font-medium text-white">{gate}</p>
-                <p className="mt-2 text-sm text-slate-400">Add notes and observations for this gate.</p>
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        <article className="rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-soft">
-          <p className="text-sm uppercase tracking-[0.25em] text-emerald-300/80">Analysis panel</p>
-          <div className="mt-6 space-y-6">
-            <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6">
-              <h2 className="text-xl font-semibold text-white">Industry durability</h2>
-              <p className="mt-3 text-slate-400">Assess long-term demand, secular trends, and the industry’s ability to withstand disruption.</p>
+      <section className="space-y-6">
+        <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-8 shadow-soft">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-emerald-300/80">Gate checklist</p>
+              <h2 className="mt-3 text-3xl font-semibold text-white">Company gate review</h2>
+              <p className="mt-3 max-w-2xl text-slate-400">
+                View all seven investment gates and drill into questions and metrics for each evaluation area.
+              </p>
             </div>
-
-            <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6">
-              <h2 className="text-xl font-semibold text-white">Valuation snapshot</h2>
-              <p className="mt-3 text-slate-400">Record valuation observations and compare them with qualitative business strength.</p>
-            </div>
-
-            <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6">
-              <h2 className="text-xl font-semibold text-white">Risk assessment</h2>
-              <p className="mt-3 text-slate-400">Capture key downside risks and portfolio considerations for the company.</p>
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 px-4 py-4 text-slate-300 shadow-soft">
+              <p className="text-sm uppercase tracking-[0.2em] text-emerald-300/90">Status guide</p>
+              <p className="mt-3 text-sm text-slate-400">Strong Pass, Pass, Neutral, Concern, Fail</p>
             </div>
           </div>
-        </article>
+        </div>
+
+        <div className="grid gap-6">
+          {gates.map((gate) => (
+            <GateCard key={gate.id} gate={gate} />
+          ))}
+        </div>
       </section>
     </div>
   )

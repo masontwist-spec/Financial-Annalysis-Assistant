@@ -6,7 +6,7 @@ const createGate = ({
   keyQuestions = [],
   keyMetrics = [],
   score = null,
-  status = 'not started',
+  status = 'Neutral',
   notes = '',
   redFlags = [],
   confidenceLevel = null,
@@ -36,6 +36,8 @@ export const gates = [
       'Does the industry benefit from long-term structural tailwinds?',
     ],
     keyMetrics: ['Market growth rate', 'Industry margin profile', 'barriers to entry'],
+    status: 'Pass',
+    confidenceLevel: 'medium',
   }),
   createGate({
     id: 'competitive-advantage',
@@ -48,6 +50,8 @@ export const gates = [
       'How easily can competitors erode the moat?',
     ],
     keyMetrics: ['Return on invested capital', 'market share', 'switching costs'],
+    status: 'Strong Pass',
+    confidenceLevel: 'high',
   }),
   createGate({
     id: 'business-model-quality',
@@ -60,6 +64,8 @@ export const gates = [
       'Are there significant revenue concentration risks?',
     ],
     keyMetrics: ['gross margin', 'free cash flow conversion', 'customer retention'],
+    status: 'Neutral',
+    confidenceLevel: 'medium',
   }),
   createGate({
     id: 'management-capital-allocation',
@@ -72,6 +78,8 @@ export const gates = [
       'How transparent and accountable is the leadership team?',
     ],
     keyMetrics: ['ROIC trends', 'insider ownership', 'share buyback discipline'],
+    status: 'Pass',
+    confidenceLevel: 'medium',
   }),
   createGate({
     id: 'financial-strength',
@@ -84,6 +92,8 @@ export const gates = [
       'Is the balance sheet conservatively structured?',
     ],
     keyMetrics: ['net debt / EBITDA', 'current ratio', 'interest coverage'],
+    status: 'Concern',
+    confidenceLevel: 'medium',
   }),
   createGate({
     id: 'valuation',
@@ -96,6 +106,8 @@ export const gates = [
       'Does the margin of safety exist?',
     ],
     keyMetrics: ['P/E', 'EV/EBITDA', 'Discount to intrinsic value'],
+    status: 'Neutral',
+    confidenceLevel: 'low',
   }),
   createGate({
     id: 'risk-assessment',
@@ -108,8 +120,9 @@ export const gates = [
       'What are the contingency plans if the thesis changes?',
     ],
     keyMetrics: ['operational risk factors', 'regulatory exposure', 'scenario downside'],
+    status: 'Concern',
+    confidenceLevel: 'low',
   }),
 ]
-
-export const gateStatuses = ['not started', 'in progress', 'complete']
+export const gateStatuses = ['Strong Pass', 'Pass', 'Neutral', 'Concern', 'Fail']
 export const confidenceLevels = ['low', 'medium', 'high']
