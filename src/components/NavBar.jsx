@@ -8,22 +8,22 @@ const navItems = [
 
 function NavBar() {
   return (
-    <header className="border-b border-slate-800 bg-slate-950/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
+    <header className="border-b-2 border-black bg-[#f2eeee]">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div>
-          <p className="text-lg font-semibold text-emerald-300">Investment Gates</p>
-          <p className="text-sm text-slate-400">A modern framework for disciplined equity research</p>
+          <p className="pixel-title text-2xl font-black uppercase">Investment Gates</p>
+          <p className="mt-1 text-sm font-semibold text-neutral-600">A raw scoring engine for disciplined equity research</p>
         </div>
 
-        <nav className="flex items-center gap-4 text-sm text-slate-300">
+        <nav className="flex flex-wrap items-center gap-2 text-sm font-bold">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 isActive
-                  ? 'rounded-full bg-emerald-500/15 px-4 py-2 text-emerald-200 transition'
-                  : 'rounded-full px-4 py-2 transition hover:bg-slate-800 hover:text-slate-100'
+                  ? 'border-2 border-black bg-black px-4 py-2 text-[#f2eeee]'
+                  : 'border-2 border-black bg-[#f2eeee] px-4 py-2 text-black transition hover:bg-[#dfd9d9]'
               }
             >
               {item.label}
