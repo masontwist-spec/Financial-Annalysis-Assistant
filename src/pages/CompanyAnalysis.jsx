@@ -9,6 +9,11 @@ import {
   saveCurrentAnalysis,
   upsertWatchlistAnalysis,
 } from '../utils/analysisStorage'
+import {
+  getFinancialSnapshot,
+  getKeyMetrics,
+  getValuationMetrics,
+} from '../services/financialDataService'
 
 const gateWeights = {
   'industry-durability': 0.2,
@@ -38,21 +43,6 @@ const defaultInvestmentMemo = {
   bearThesis: '',
   keyRisks: '',
   finalDecision: 'Research More',
-}
-
-const mockFinancialData = {
-  revenue: '$394.3B',
-  revenueGrowth: '6.4%',
-  grossMargin: '44.1%',
-  operatingMargin: '30.8%',
-  netIncome: '$97.0B',
-  freeCashFlow: '$99.6B',
-  roic: '31.2%',
-  debtToEbitda: '0.8x',
-  interestCoverage: '28.4x',
-  peRatio: '29.7x',
-  evToEbitda: '22.1x',
-  freeCashFlowYield: '3.4%',
 }
 
 const financialSnapshotSections = [
@@ -362,7 +352,13 @@ function CompanyAnalysis() {
         .filter(Boolean),
     [companyInfo.competitors],
   )
-  const suggestedEvidenceByGate = useMemo(() => buildSuggestedEvidence(mockFinancialData), [])
+  const financialSnapshot = useMemo(() => getFinancialSnapshot(companyInfo.ticker), [companyInfo.ticker])
+  const keyMetrics = useMemo(() => getKeyMetrics(companyInfo.ticker), [companyInfo.ticker])
+  const valuationMetrics = useMemo(() => getValuationMetrics(companyInfo.ticker), [companyInfo.ticker])
+  const suggestedEvidenceByGate = useMemo(
+    () => buildSuggestedEvidence({ ...keyMetrics, ...valuationMetrics }),
+    [keyMetrics, valuationMetrics],
+  )
   const generatedMemo = useMemo(
     () =>
       buildInvestmentMemo({
@@ -657,7 +653,7 @@ function CompanyAnalysis() {
             </p>
           </div>
           <span className="inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">
-            Data Source: Manual / Mock Data
+            Data Source: {financialSnapshot.dataSource}
           </span>
         </div>
 
@@ -669,7 +665,7 @@ function CompanyAnalysis() {
                 {section.metrics.map((metric) => (
                   <div key={metric.key} className="flex items-baseline justify-between gap-4 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0">
                     <dt className="text-sm font-medium text-slate-600">{metric.label}</dt>
-                    <dd className="text-right text-lg font-semibold text-slate-950">{mockFinancialData[metric.key]}</dd>
+                    <dd className="text-right text-lg font-semibold text-slate-950">{financialSnapshot[metric.key]}</dd>
                   </div>
                 ))}
               </dl>
