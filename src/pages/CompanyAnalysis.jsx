@@ -40,6 +40,56 @@ const defaultInvestmentMemo = {
   finalDecision: 'Research More',
 }
 
+const mockFinancialData = {
+  revenue: '$394.3B',
+  revenueGrowth: '6.4%',
+  grossMargin: '44.1%',
+  operatingMargin: '30.8%',
+  netIncome: '$97.0B',
+  freeCashFlow: '$99.6B',
+  roic: '31.2%',
+  debtToEbitda: '0.8x',
+  interestCoverage: '28.4x',
+  peRatio: '29.7x',
+  evToEbitda: '22.1x',
+  freeCashFlowYield: '3.4%',
+}
+
+const financialSnapshotSections = [
+  {
+    title: 'Growth & Scale',
+    metrics: [
+      { label: 'Revenue', key: 'revenue' },
+      { label: 'Revenue growth', key: 'revenueGrowth' },
+      { label: 'Net income', key: 'netIncome' },
+      { label: 'Free cash flow', key: 'freeCashFlow' },
+    ],
+  },
+  {
+    title: 'Profitability',
+    metrics: [
+      { label: 'Gross margin', key: 'grossMargin' },
+      { label: 'Operating margin', key: 'operatingMargin' },
+      { label: 'ROIC', key: 'roic' },
+    ],
+  },
+  {
+    title: 'Balance Sheet',
+    metrics: [
+      { label: 'Debt / EBITDA', key: 'debtToEbitda' },
+      { label: 'Interest coverage', key: 'interestCoverage' },
+    ],
+  },
+  {
+    title: 'Valuation',
+    metrics: [
+      { label: 'P/E ratio', key: 'peRatio' },
+      { label: 'EV / EBITDA', key: 'evToEbitda' },
+      { label: 'FCF yield', key: 'freeCashFlowYield' },
+    ],
+  },
+]
+
 const defaultAnalysis = {
   id: null,
   gateEvaluations: gates,
@@ -475,6 +525,39 @@ function CompanyAnalysis() {
               </div>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section className="pixel-panel overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Financial Snapshot</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+              {companyInfo.ticker || companyInfo.companyName ? `${companyInfo.ticker || companyInfo.companyName} fundamentals` : 'Mock fundamentals'}
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              A placeholder financial profile shaped for future API integration.
+            </p>
+          </div>
+          <span className="inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">
+            Data Source: Manual / Mock Data
+          </span>
+        </div>
+
+        <div className="grid gap-4 p-6 xl:grid-cols-4">
+          {financialSnapshotSections.map((section) => (
+            <article key={section.title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{section.title}</h3>
+              <dl className="mt-5 space-y-4">
+                {section.metrics.map((metric) => (
+                  <div key={metric.key} className="flex items-baseline justify-between gap-4 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0">
+                    <dt className="text-sm font-medium text-slate-600">{metric.label}</dt>
+                    <dd className="text-right text-lg font-semibold text-slate-950">{mockFinancialData[metric.key]}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
         </div>
       </section>
 
