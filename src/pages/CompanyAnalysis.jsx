@@ -12,6 +12,7 @@ import {
 import {
   getFinancialSnapshot,
   mockFinancialSnapshot,
+  resolveCompanySearch,
 } from '../services/financialDataService'
 
 const gateWeights = {
@@ -308,6 +309,11 @@ function CompanyAnalysis() {
   const [financialSnapshot, setFinancialSnapshot] = useState(mockFinancialSnapshot)
   const [financialDataLoading, setFinancialDataLoading] = useState(false)
   const [financialDataError, setFinancialDataError] = useState('')
+  const [companySearchInput, setCompanySearchInput] = useState(
+    initialAnalysis.companyInfo.ticker || initialAnalysis.companyInfo.companyName || '',
+  )
+  const [companyLookupLoading, setCompanyLookupLoading] = useState(false)
+  const [companyLookupError, setCompanyLookupError] = useState('')
 
   useEffect(() => {
     setAnalysisId(initialAnalysis.id)
@@ -317,6 +323,7 @@ function CompanyAnalysis() {
     setInvestmentMemo(initialAnalysis.investmentMemo)
     setSavedAt(initialAnalysis.savedAt)
     setStorageMessage(initialAnalysis.savedAt ? 'Saved analysis loaded.' : '')
+    setCompanySearchInput(initialAnalysis.companyInfo.ticker || initialAnalysis.companyInfo.companyName || '')
   }, [initialAnalysis])
 
   const updateGate = (gateId, updates) => {
@@ -377,20 +384,27 @@ function CompanyAnalysis() {
     }
   }, [generatedMemo, memoEdited])
 
-  const loadFinancialData = async () => {
+  const loadFinancialData = async (ticker = companyInfo.ticker) => {
     setFinancialDataLoading(true)
     setFinancialDataError('')
 
-    const snapshot = await getFinancialSnapshot(companyInfo.ticker)
+    const snapshot = await getFinancialSnapshot(ticker)
 
     setFinancialSnapshot(snapshot)
     setFinancialDataError(snapshot.error ?? '')
     setFinancialDataLoading(false)
+
+    return snapshot
   }
 
   useEffect(() => {
-    loadFinancialData()
-  }, [companyInfo.ticker])
+    if (initialAnalysis.companyInfo.ticker) {
+      loadFinancialData(initialAnalysis.companyInfo.ticker)
+    } else {
+      setFinancialSnapshot(mockFinancialSnapshot)
+      setFinancialDataError('')
+    }
+  }, [initialAnalysis])
 
   useEffect(() => {
     const currentAnalysis = {
@@ -433,6 +447,50 @@ function CompanyAnalysis() {
     setInvestmentMemo(generatedMemo)
     setMemoEdited(false)
     setStorageMessage('Memo preview generated from current inputs.')
+  }
+
+  const startAnalysis = async (event) => {
+    event.preventDefault()
+
+    const query = companySearchInput.trim()
+
+    if (!query) {
+      setCompanyLookupError('Enter a company name or ticker to start.')
+      return
+    }
+
+    setCompanyLookupLoading(true)
+    setCompanyLookupError('')
+
+    try {
+      const resolvedCompany = await resolveCompanySearch(query)
+
+      setCompanyInfo((currentInfo) => ({
+        ...currentInfo,
+        ticker: resolvedCompany.symbol,
+        companyName: resolvedCompany.name || currentInfo.companyName || query,
+      }))
+
+      const snapshot = await loadFinancialData(resolvedCompany.symbol)
+
+      setCompanyInfo((currentInfo) => ({
+        ...currentInfo,
+        ticker: resolvedCompany.symbol,
+        companyName: resolvedCompany.name || currentInfo.companyName || query,
+        currentPrice: snapshot.price || currentInfo.currentPrice,
+        marketCap: snapshot.marketCap || currentInfo.marketCap,
+      }))
+
+      setStorageMessage(`Analysis started for ${resolvedCompany.symbol}.`)
+
+      if (resolvedCompany.warning) {
+        setCompanyLookupError(`${resolvedCompany.warning} Using "${resolvedCompany.symbol}" as a manual ticker fallback.`)
+      }
+    } catch (error) {
+      setCompanyLookupError(error.message)
+    } finally {
+      setCompanyLookupLoading(false)
+    }
   }
 
   const createAnalysisId = () => {
@@ -479,6 +537,8 @@ function CompanyAnalysis() {
     setSavedAt(null)
     setFinancialSnapshot(mockFinancialSnapshot)
     setFinancialDataError('')
+    setCompanySearchInput('')
+    setCompanyLookupError('')
     setStorageMessage('Analysis reset.')
   }
 
@@ -528,10 +588,41 @@ function CompanyAnalysis() {
         <div className="border-b border-slate-200 bg-slate-50 px-6 py-5">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Research report setup</p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">Company input</h2>
-          <p className="mt-1 text-sm text-slate-600">Manually enter the basic company context before scoring gates.</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Enter a ticker or company name, submit it, then begin the gate analysis workflow.
+          </p>
         </div>
 
-        <div className="grid gap-6 p-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-6 p-6">
+          <form onSubmit={startAnalysis} className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+            <label className="block">
+              <span className="text-sm font-semibold text-emerald-900">Start a company analysis</span>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={companySearchInput}
+                  onChange={(event) => setCompanySearchInput(event.target.value)}
+                  placeholder="Enter ticker or company name, e.g. AAPL or Apple"
+                  className="min-w-0 flex-1 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                />
+                <button
+                  type="submit"
+                  disabled={companyLookupLoading || financialDataLoading}
+                  className="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-400"
+                >
+                  {companyLookupLoading || financialDataLoading ? 'Starting...' : 'Start Analysis'}
+                </button>
+              </div>
+            </label>
+            {companyLookupError ? (
+              <p className="mt-3 text-sm font-semibold text-amber-800">{companyLookupError}</p>
+            ) : (
+              <p className="mt-3 text-sm text-emerald-900">
+                This resolves the company, loads available financial data, and keeps gate scoring manual.
+              </p>
+            )}
+          </form>
+
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
               <span className="block text-sm font-semibold text-slate-700">Ticker</span>
@@ -658,6 +749,7 @@ function CompanyAnalysis() {
             </div>
           </aside>
         </div>
+        </div>
       </section>
 
       <section className="pixel-panel overflow-hidden">
@@ -684,7 +776,7 @@ function CompanyAnalysis() {
             <p className="text-xs font-medium text-slate-500">Last Updated: {financialLastUpdatedLabel}</p>
             <button
               type="button"
-              onClick={loadFinancialData}
+              onClick={() => loadFinancialData()}
               disabled={financialDataLoading}
               className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             >

@@ -84,6 +84,74 @@ const fetchFmp = async (path, ticker, params = {}) => {
   return data
 }
 
+const fetchFmpSearch = async (query) => {
+  const apiKey = import.meta.env.VITE_FMP_API_KEY
+
+  if (!apiKey) {
+    throw new Error('Missing VITE_FMP_API_KEY.')
+  }
+
+  const searchQuery = query?.trim()
+
+  if (!searchQuery) {
+    throw new Error('Enter a company name or ticker.')
+  }
+
+  const url = new URL(`${FMP_BASE_URL}/search`)
+  url.searchParams.set('query', searchQuery)
+  url.searchParams.set('limit', '10')
+  url.searchParams.set('apikey', apiKey)
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Financial Modeling Prep search failed: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error(`No company match found for "${searchQuery}".`)
+  }
+
+  return data
+}
+
+export async function resolveCompanySearch(query) {
+  const searchQuery = query?.trim()
+
+  if (!searchQuery) {
+    throw new Error('Enter a company name or ticker.')
+  }
+
+  try {
+    const results = await fetchFmpSearch(searchQuery)
+    const exactTickerMatch = results.find((result) => result.symbol?.toUpperCase() === searchQuery.toUpperCase())
+    const match = exactTickerMatch ?? results[0]
+
+    return {
+      symbol: match.symbol?.toUpperCase() ?? searchQuery.toUpperCase(),
+      name: match.name ?? '',
+      exchange: match.exchangeShortName ?? match.stockExchange ?? '',
+      source: 'Financial Modeling Prep',
+    }
+  } catch (error) {
+    const looksLikeTicker = /^[A-Za-z.:-]{1,8}$/.test(searchQuery)
+
+    if (looksLikeTicker) {
+      return {
+        symbol: searchQuery.toUpperCase(),
+        name: '',
+        exchange: '',
+        source: 'Manual ticker fallback',
+        warning: error.message,
+      }
+    }
+
+    throw error
+  }
+}
+
 const withMockFallback = (normalizedSnapshot, error = null) => ({
   ...mockFinancialSnapshot,
   ...normalizedSnapshot,
