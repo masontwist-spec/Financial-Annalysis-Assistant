@@ -1,1 +1,1 @@
-# Financial-Annalysis-Assistant
+# Financial-Analysis-Assistant
