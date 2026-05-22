@@ -22,11 +22,27 @@ const getInvestmentClassification = (score) => {
 
 function CompanyAnalysis() {
   const [gateEvaluations, setGateEvaluations] = useState(gates)
+  const [companyInfo, setCompanyInfo] = useState({
+    ticker: '',
+    companyName: '',
+    industry: '',
+    thesis: '',
+    competitors: '',
+    currentPrice: '',
+    marketCap: '',
+  })
 
   const updateGate = (gateId, updates) => {
     setGateEvaluations((currentGates) =>
       currentGates.map((gate) => (gate.id === gateId ? { ...gate, ...updates } : gate)),
     )
+  }
+
+  const updateCompanyInfo = (field, value) => {
+    setCompanyInfo((currentInfo) => ({
+      ...currentInfo,
+      [field]: value,
+    }))
   }
 
   const compositeScore = Math.round(
@@ -40,24 +56,160 @@ function CompanyAnalysis() {
   const classification = getInvestmentClassification(compositeScore)
   const gatesPassed = gateEvaluations.filter((gate) => ['Strong Pass', 'Pass'].includes(gate.status)).length
   const concernFailGates = gateEvaluations.filter((gate) => ['Concern', 'Fail'].includes(gate.status)).length
+  const competitorsList = companyInfo.competitors
+    .split(',')
+    .map((competitor) => competitor.trim())
+    .filter(Boolean)
 
   return (
     <div className="space-y-8">
       <div className="pixel-panel p-6 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
           <div>
             <p className="text-sm font-black uppercase tracking-[0.25em] text-neutral-700">Company Analysis</p>
             <h1 className="pixel-title mt-3 text-4xl font-black uppercase">Evaluate a business through investment gates</h1>
           </div>
-          <div className="border-2 border-black bg-white px-4 py-4 shadow-pixel sm:min-w-80">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Enter company</p>
-            <input
-              placeholder="Search ticker or company name"
-              className="mt-3 w-full border-2 border-black bg-[#fffbe6] px-4 py-3 font-bold text-black outline-none transition placeholder:text-neutral-600 focus:bg-white"
-            />
-          </div>
         </div>
       </div>
+
+      <section className="pixel-panel overflow-hidden">
+        <div className="flex items-center justify-between border-b-2 border-black bg-[#fffbe6] px-4 py-3">
+          <p className="pixel-title text-xl font-black lowercase">company_profile</p>
+          <div className="flex gap-2">
+            <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
+            <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
+            <span className="h-4 w-4 rounded-full border-2 border-black bg-black" />
+          </div>
+        </div>
+
+        <div className="grid gap-6 p-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Ticker</span>
+              <input
+                value={companyInfo.ticker}
+                onChange={(event) => updateCompanyInfo('ticker', event.target.value.toUpperCase())}
+                placeholder="AAPL"
+                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Company name</span>
+              <input
+                value={companyInfo.companyName}
+                onChange={(event) => updateCompanyInfo('companyName', event.target.value)}
+                placeholder="Apple Inc."
+                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Industry</span>
+              <input
+                value={companyInfo.industry}
+                onChange={(event) => updateCompanyInfo('industry', event.target.value)}
+                placeholder="Consumer Technology"
+                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Competitors</span>
+              <input
+                value={companyInfo.competitors}
+                onChange={(event) => updateCompanyInfo('competitors', event.target.value)}
+                placeholder="MSFT, GOOGL, Samsung"
+                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Current price</span>
+              <input
+                value={companyInfo.currentPrice}
+                onChange={(event) => updateCompanyInfo('currentPrice', event.target.value)}
+                placeholder="$190.50"
+                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Market cap</span>
+              <input
+                value={companyInfo.marketCap}
+                onChange={(event) => updateCompanyInfo('marketCap', event.target.value)}
+                placeholder="$2.9T"
+                className="w-full border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+
+            <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4 md:col-span-2">
+              <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Brief personal thesis</span>
+              <textarea
+                value={companyInfo.thesis}
+                onChange={(event) => updateCompanyInfo('thesis', event.target.value)}
+                rows="5"
+                placeholder="Why this company may deserve capital..."
+                className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none placeholder:text-neutral-600 focus:bg-[#c9ff7a]"
+              />
+            </label>
+          </div>
+
+          <aside className="border-2 border-black bg-white p-5 shadow-pixel">
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Company snapshot</p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="pixel-title text-4xl font-black uppercase">
+                  {companyInfo.ticker || 'TICKER'}
+                </p>
+                <p className="mt-1 text-xl font-black">
+                  {companyInfo.companyName || 'Company name'}
+                </p>
+              </div>
+
+              <dl className="grid gap-3">
+                <div className="border-2 border-black bg-[#fffbe6] p-3">
+                  <dt className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Industry</dt>
+                  <dd className="mt-1 font-black">{companyInfo.industry || 'Not entered'}</dd>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="border-2 border-black bg-[#c9ff7a] p-3">
+                    <dt className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Price</dt>
+                    <dd className="mt-1 font-black">{companyInfo.currentPrice || 'TBD'}</dd>
+                  </div>
+                  <div className="border-2 border-black bg-[#c9ff7a] p-3">
+                    <dt className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Market cap</dt>
+                    <dd className="mt-1 font-black">{companyInfo.marketCap || 'TBD'}</dd>
+                  </div>
+                </div>
+              </dl>
+
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Competitors</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {competitorsList.length > 0 ? (
+                    competitorsList.map((competitor) => (
+                      <span key={competitor} className="border-2 border-black bg-white px-3 py-1 text-sm font-black shadow-[2px_2px_0_#111111]">
+                        {competitor}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="font-bold text-neutral-600">No competitors entered</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-2 border-black bg-[#fffbe6] p-4">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Personal thesis</p>
+                <p className="mt-2 whitespace-pre-wrap font-bold text-neutral-900">
+                  {companyInfo.thesis || 'No thesis entered yet.'}
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
 
       <section className="pixel-panel overflow-hidden">
         <div className="flex items-center justify-between border-b-2 border-black bg-[#c9ff7a] px-4 py-3">
