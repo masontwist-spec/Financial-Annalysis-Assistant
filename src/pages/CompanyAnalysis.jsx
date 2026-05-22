@@ -12,6 +12,64 @@ const gateWeights = {
   'risk-assessment': 0.05,
 }
 
+const STORAGE_KEY = 'investment-gates-current-analysis'
+
+const defaultCompanyInfo = {
+  ticker: '',
+  companyName: '',
+  industry: '',
+  thesis: '',
+  competitors: '',
+  currentPrice: '',
+  marketCap: '',
+}
+
+const defaultInvestmentMemo = {
+  companyOverview: '',
+  scoreSummary: '',
+  gateSummary: '',
+  bullThesis: '',
+  bearThesis: '',
+  keyRisks: '',
+  finalDecision: 'Research More',
+}
+
+const defaultAnalysis = {
+  gateEvaluations: gates,
+  companyInfo: defaultCompanyInfo,
+  investmentMemo: defaultInvestmentMemo,
+  memoEdited: false,
+  savedAt: null,
+}
+
+const mergeSavedGates = (savedGates = []) =>
+  gates.map((gate) => {
+    const savedGate = savedGates.find((item) => item.id === gate.id)
+
+    return savedGate ? { ...gate, ...savedGate } : gate
+  })
+
+const loadSavedAnalysis = () => {
+  if (typeof window === 'undefined') return defaultAnalysis
+
+  try {
+    const savedAnalysis = window.localStorage.getItem(STORAGE_KEY)
+    if (!savedAnalysis) return defaultAnalysis
+
+    const parsedAnalysis = JSON.parse(savedAnalysis)
+
+    return {
+      gateEvaluations: mergeSavedGates(parsedAnalysis.gateEvaluations),
+      companyInfo: { ...defaultCompanyInfo, ...parsedAnalysis.companyInfo },
+      investmentMemo: { ...defaultInvestmentMemo, ...parsedAnalysis.investmentMemo },
+      memoEdited: Boolean(parsedAnalysis.memoEdited),
+      savedAt: parsedAnalysis.savedAt ?? null,
+    }
+  } catch {
+    return defaultAnalysis
+  }
+}
+
 const getInvestmentClassification = (score) => {
   if (score >= 85) return 'Elite Compounder'
   if (score >= 70) return 'Strong Candidate'
@@ -79,26 +137,13 @@ const buildInvestmentMemo = ({
 }
 
 function CompanyAnalysis() {
-  const [gateEvaluations, setGateEvaluations] = useState(gates)
-  const [companyInfo, setCompanyInfo] = useState({
-    ticker: '',
-    companyName: '',
-    industry: '',
-    thesis: '',
-    competitors: '',
-    currentPrice: '',
-    marketCap: '',
-  })
-  const [memoEdited, setMemoEdited] = useState(false)
-  const [investmentMemo, setInvestmentMemo] = useState({
-    companyOverview: '',
-    scoreSummary: '',
-    gateSummary: '',
-    bullThesis: '',
-    bearThesis: '',
-    keyRisks: '',
-    finalDecision: 'Research More',
-  })
+  const initialAnalysis = useMemo(() => loadSavedAnalysis(), [])
+  const [gateEvaluations, setGateEvaluations] = useState(initialAnalysis.gateEvaluations)
+  const [companyInfo, setCompanyInfo] = useState(initialAnalysis.companyInfo)
+  const [memoEdited, setMemoEdited] = useState(initialAnalysis.memoEdited)
+  const [investmentMemo, setInvestmentMemo] = useState(initialAnalysis.investmentMemo)
+  const [savedAt, setSavedAt] = useState(initialAnalysis.savedAt)
+  const [storageMessage, setStorageMessage] = useState(initialAnalysis.savedAt ? 'Saved analysis loaded.' : '')
 
   const updateGate = (gateId, updates) => {
     setGateEvaluations((currentGates) =>
@@ -165,13 +210,61 @@ function CompanyAnalysis() {
     setMemoEdited(false)
   }
 
+  const saveAnalysis = () => {
+    const nextSavedAt = new Date().toISOString()
+    const analysisToSave = {
+      gateEvaluations,
+      companyInfo,
+      investmentMemo,
+      memoEdited,
+      savedAt: nextSavedAt,
+    }
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(analysisToSave))
+    setSavedAt(nextSavedAt)
+    setStorageMessage('Analysis saved locally.')
+  }
+
+  const clearAnalysis = () => {
+    window.localStorage.removeItem(STORAGE_KEY)
+    setGateEvaluations(gates)
+    setCompanyInfo(defaultCompanyInfo)
+    setInvestmentMemo(defaultInvestmentMemo)
+    setMemoEdited(false)
+    setSavedAt(null)
+    setStorageMessage('Current analysis cleared.')
+  }
+
+  const savedAtLabel = savedAt ? new Date(savedAt).toLocaleString() : 'Not saved yet'
+
   return (
     <div className="space-y-8">
       <div className="pixel-panel p-6 sm:p-8">
-        <div>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.25em] text-neutral-700">Company Analysis</p>
             <h1 className="pixel-title mt-3 text-4xl font-black uppercase">Evaluate a business through investment gates</h1>
+          </div>
+          <div className="border-2 border-black bg-white p-4 shadow-pixel">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-700">Local storage</p>
+            <p className="mt-2 text-sm font-bold text-neutral-800">Last saved: {savedAtLabel}</p>
+            {storageMessage ? <p className="mt-1 text-sm font-black text-neutral-900">{storageMessage}</p> : null}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={saveAnalysis}
+                className="border-2 border-black bg-[#c9ff7a] px-4 py-2 text-sm font-black uppercase tracking-[0.12em] shadow-[3px_3px_0_#111111] transition hover:-translate-y-0.5"
+              >
+                Save analysis
+              </button>
+              <button
+                type="button"
+                onClick={clearAnalysis}
+                className="border-2 border-black bg-white px-4 py-2 text-sm font-black uppercase tracking-[0.12em] shadow-[3px_3px_0_#111111] transition hover:-translate-y-0.5 hover:bg-[#ff8a8a]"
+              >
+                Clear current
+              </button>
+            </div>
           </div>
         </div>
       </div>
