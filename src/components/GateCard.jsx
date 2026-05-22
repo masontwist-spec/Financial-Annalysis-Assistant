@@ -4,7 +4,7 @@ import { confidenceLevels, gateStatuses } from '../data/gates'
 const statusStyles = {
   'Strong Pass': 'bg-[#c9ff7a]',
   Pass: 'bg-[#ddffad]',
-  Neutral: 'bg-[#f8f5f5]',
+  Neutral: 'bg-white',
   Concern: 'bg-[#ffd35a]',
   Fail: 'bg-[#ff8a8a]',
 }
@@ -44,12 +44,12 @@ function GateCard({ gate, onChange }) {
   }
 
   return (
-    <div className="overflow-hidden border-2 border-black bg-[#f8f5f5] shadow-pixel">
-      <div className="flex items-center justify-between border-b-2 border-black bg-[#f2eeee] px-4 py-3">
+    <div className="overflow-hidden border-2 border-black bg-white shadow-pixel">
+      <div className="flex items-center justify-between border-b-2 border-black bg-[#fffbe6] px-4 py-3">
         <p className="pixel-title text-xl font-black lowercase">{gate.id}</p>
         <div className="flex gap-2">
-          <span className="h-4 w-4 rounded-full border-2 border-black bg-[#f2eeee]" />
-          <span className="h-4 w-4 rounded-full border-2 border-black bg-[#f2eeee]" />
+          <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
+          <span className="h-4 w-4 rounded-full border-2 border-black bg-white" />
           <span className="h-4 w-4 rounded-full border-2 border-black bg-black" />
         </div>
       </div>
@@ -60,22 +60,22 @@ function GateCard({ gate, onChange }) {
               <span className={`border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-[0.18em] ${badgeClass}`}>
                 {gate.status}
               </span>
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-neutral-500">Confidence</span>
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-neutral-700">Confidence</span>
               <span className="border-2 border-black bg-white px-3 py-1 text-xs font-black">{confidenceLabel}</span>
             </div>
             <h2 className="pixel-title text-2xl font-black uppercase">{gate.title}</h2>
-            <p className="font-semibold text-neutral-600">{gate.shortDescription}</p>
+            <p className="font-bold text-neutral-800">{gate.shortDescription}</p>
           </div>
 
-          <div className="border-2 border-black bg-white px-4 py-3 text-right sm:min-w-[10rem]">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Score</p>
+          <div className="border-2 border-black bg-[#c9ff7a] px-4 py-3 text-right sm:min-w-[10rem]">
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-800">Score</p>
             <p className="mt-2 text-4xl font-black">{scoreLabel}</p>
           </div>
         </div>
 
-        <div className="mt-6 border-2 border-black bg-[#f2eeee] p-5">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Core question</p>
-          <p className="mt-3 font-bold text-neutral-800">{gate.coreQuestion}</p>
+        <div className="mt-6 border-2 border-black bg-[#fffbe6] p-5">
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Core question</p>
+          <p className="mt-3 font-black text-neutral-900">{gate.coreQuestion}</p>
         </div>
       </div>
 
@@ -89,12 +89,12 @@ function GateCard({ gate, onChange }) {
       </button>
 
       {isOpen && (
-        <div className="border-t-2 border-black bg-[#f8f5f5] px-6 py-6">
+        <div className="border-t-2 border-black bg-white px-6 py-6">
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="lg:col-span-2">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Manual scoring</h3>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Manual scoring</h3>
               <div className="mt-4 grid gap-4 lg:grid-cols-4">
-                <label className="space-y-2 border-2 border-black bg-[#f2eeee] p-4">
+                <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
                   <span className="block text-sm font-black">Status</span>
                   <select
                     value={gate.status}
@@ -109,7 +109,7 @@ function GateCard({ gate, onChange }) {
                   </select>
                 </label>
 
-                <label className="space-y-2 border-2 border-black bg-[#f2eeee] p-4">
+                <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
                   <span className="block text-sm font-black">Score</span>
                   <input
                     type="number"
@@ -123,7 +123,7 @@ function GateCard({ gate, onChange }) {
                   />
                 </label>
 
-                <label className="space-y-2 border-2 border-black bg-[#f2eeee] p-4">
+                <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
                   <span className="block text-sm font-black">Confidence</span>
                   <select
                     value={gate.confidenceLevel ?? ''}
@@ -139,16 +139,16 @@ function GateCard({ gate, onChange }) {
                   </select>
                 </label>
 
-                <div className="border-2 border-black bg-[#f2eeee] p-4">
+                <div className="border-2 border-black bg-[#fffbe6] p-4">
                   <span className="block text-sm font-black">Current read</span>
-                  <p className="mt-3 text-sm font-bold text-neutral-600">
+                  <p className="mt-3 text-sm font-black text-neutral-900">
                     {gate.status} / {scoreLabel} / {confidenceLabel}
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <label className="space-y-2 border-2 border-black bg-[#f2eeee] p-4">
+                <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
                   <span className="block text-sm font-black">Notes</span>
                   <textarea
                     value={notesValue}
@@ -159,7 +159,7 @@ function GateCard({ gate, onChange }) {
                   />
                 </label>
 
-                <label className="space-y-2 border-2 border-black bg-[#f2eeee] p-4">
+                <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
                   <span className="block text-sm font-black">Red flags</span>
                   <textarea
                     value={redFlagsValue}
@@ -173,7 +173,7 @@ function GateCard({ gate, onChange }) {
             </div>
 
             <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Key questions</h3>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Key questions</h3>
               <ul className="mt-4 space-y-3 font-bold text-neutral-800">
                 {gate.keyQuestions.length > 0 ? (
                   gate.keyQuestions.map((question) => (
@@ -188,7 +188,7 @@ function GateCard({ gate, onChange }) {
             </div>
 
             <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Key metrics</h3>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Key metrics</h3>
               <ul className="mt-4 space-y-3 font-bold text-neutral-800">
                 {gate.keyMetrics.length > 0 ? (
                   gate.keyMetrics.map((metric) => (
@@ -203,7 +203,7 @@ function GateCard({ gate, onChange }) {
             </div>
 
             <div className="lg:col-span-2">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Saved notes & red flags</h3>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-700">Saved notes & red flags</h3>
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div className="min-h-24 whitespace-pre-wrap border-2 border-black bg-white px-4 py-3 font-bold text-neutral-800">
                   {notesValue ? notesValue : <span className="text-neutral-500">No notes added yet.</span>}

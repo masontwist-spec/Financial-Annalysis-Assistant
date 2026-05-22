@@ -8,7 +8,7 @@ const navItems = [
 
 function NavBar() {
   return (
-    <header className="border-b-2 border-black bg-[#f2eeee]">
+    <header className="border-b-2 border-black bg-[#fffdfa]">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div>
           <p className="pixel-title text-2xl font-black uppercase">Investment Gates</p>
@@ -22,8 +22,8 @@ function NavBar() {
               to={item.path}
               className={({ isActive }) =>
                 isActive
-                  ? 'border-2 border-black bg-black px-4 py-2 text-[#f2eeee]'
-                  : 'border-2 border-black bg-[#f2eeee] px-4 py-2 text-black transition hover:bg-[#dfd9d9]'
+                  ? 'border-2 border-black bg-black px-4 py-2 text-[#fffdfa] shadow-[3px_3px_0_#c9ff7a]'
+                  : 'border-2 border-black bg-white px-4 py-2 text-black transition hover:-translate-y-0.5 hover:bg-[#c9ff7a] hover:shadow-[3px_3px_0_#111111]'
               }
             >
               {item.label}

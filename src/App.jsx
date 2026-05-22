@@ -6,7 +6,7 @@ import CompanyAnalysis from './pages/CompanyAnalysis'
 
 function App() {
   return (
-    <div className="min-h-screen bg-[#f2eeee] text-black">
+    <div className="min-h-screen bg-[#f4f1ec] text-black">
       <NavBar />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Routes>
