@@ -22,6 +22,8 @@ export const mockFinancialSnapshot = {
 
 const normalizeTicker = (ticker) => ticker?.trim().toUpperCase()
 
+const looksLikeTicker = (query) => /^[A-Za-z][A-Za-z.-]{0,7}$/.test(query?.trim() ?? '')
+
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return null
 
@@ -124,6 +126,15 @@ export async function resolveCompanySearch(query) {
     throw new Error('Enter a company name or ticker.')
   }
 
+  if (looksLikeTicker(searchQuery)) {
+    return {
+      symbol: searchQuery.toUpperCase(),
+      name: '',
+      exchange: '',
+      source: 'Ticker input',
+    }
+  }
+
   try {
     const results = await fetchFmpSearch(searchQuery)
     const exactTickerMatch = results.find((result) => result.symbol?.toUpperCase() === searchQuery.toUpperCase())
@@ -136,19 +147,13 @@ export async function resolveCompanySearch(query) {
       source: 'Financial Modeling Prep',
     }
   } catch (error) {
-    const looksLikeTicker = /^[A-Za-z.:-]{1,8}$/.test(searchQuery)
-
-    if (looksLikeTicker) {
-      return {
-        symbol: searchQuery.toUpperCase(),
-        name: '',
-        exchange: '',
-        source: 'Manual ticker fallback',
-        warning: error.message,
-      }
+    return {
+      symbol: searchQuery.toUpperCase(),
+      name: searchQuery,
+      exchange: '',
+      source: 'Manual company fallback',
+      warning: `Company search is unavailable (${error.message}). You can continue manually or try a ticker symbol.`,
     }
-
-    throw error
   }
 }
 

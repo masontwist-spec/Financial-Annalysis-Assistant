@@ -484,7 +484,7 @@ function CompanyAnalysis() {
       setStorageMessage(`Analysis started for ${resolvedCompany.symbol}.`)
 
       if (resolvedCompany.warning) {
-        setCompanyLookupError(`${resolvedCompany.warning} Using "${resolvedCompany.symbol}" as a manual ticker fallback.`)
+        setCompanyLookupError(resolvedCompany.warning)
       }
     } catch (error) {
       setCompanyLookupError(error.message)
