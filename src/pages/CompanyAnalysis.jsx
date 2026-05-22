@@ -1,7 +1,16 @@
+import { useState } from 'react'
 import GateCard from '../components/GateCard'
 import { gates } from '../data/gates'
 
 function CompanyAnalysis() {
+  const [gateEvaluations, setGateEvaluations] = useState(gates)
+
+  const updateGate = (gateId, updates) => {
+    setGateEvaluations((currentGates) =>
+      currentGates.map((gate) => (gate.id === gateId ? { ...gate, ...updates } : gate)),
+    )
+  }
+
   return (
     <div className="space-y-8">
       <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-soft">
@@ -38,8 +47,8 @@ function CompanyAnalysis() {
         </div>
 
         <div className="grid gap-6">
-          {gates.map((gate) => (
-            <GateCard key={gate.id} gate={gate} />
+          {gateEvaluations.map((gate) => (
+            <GateCard key={gate.id} gate={gate} onChange={updateGate} />
           ))}
         </div>
       </section>
