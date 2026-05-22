@@ -4,6 +4,7 @@ const navItems = [
   { label: 'Home', path: '/' },
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Company Analysis', path: '/company' },
+  { label: 'Watchlist', path: '/watchlist' },
 ]
 
 function NavBar() {

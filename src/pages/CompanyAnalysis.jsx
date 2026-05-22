@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import GateCard from '../components/GateCard'
 import { gates } from '../data/gates'
+import {
+  clearCurrentAnalysis,
+  getWatchlistAnalysis,
+  loadCurrentAnalysis,
+  saveCurrentAnalysis,
+  upsertWatchlistAnalysis,
+} from '../utils/analysisStorage'
 
 const gateWeights = {
   'industry-durability': 0.2,
@@ -11,8 +19,6 @@ const gateWeights = {
   valuation: 0.1,
   'risk-assessment': 0.05,
 }
-
-const STORAGE_KEY = 'investment-gates-current-analysis'
 
 const defaultCompanyInfo = {
   ticker: '',
@@ -35,6 +41,7 @@ const defaultInvestmentMemo = {
 }
 
 const defaultAnalysis = {
+  id: null,
   gateEvaluations: gates,
   companyInfo: defaultCompanyInfo,
   investmentMemo: defaultInvestmentMemo,
@@ -49,26 +56,21 @@ const mergeSavedGates = (savedGates = []) =>
     return savedGate ? { ...gate, ...savedGate } : gate
   })
 
-const loadSavedAnalysis = () => {
-  if (typeof window === 'undefined') return defaultAnalysis
+const hydrateAnalysis = (savedAnalysis) => {
+  if (!savedAnalysis) return defaultAnalysis
 
-  try {
-    const savedAnalysis = window.localStorage.getItem(STORAGE_KEY)
-    if (!savedAnalysis) return defaultAnalysis
-
-    const parsedAnalysis = JSON.parse(savedAnalysis)
-
-    return {
-      gateEvaluations: mergeSavedGates(parsedAnalysis.gateEvaluations),
-      companyInfo: { ...defaultCompanyInfo, ...parsedAnalysis.companyInfo },
-      investmentMemo: { ...defaultInvestmentMemo, ...parsedAnalysis.investmentMemo },
-      memoEdited: Boolean(parsedAnalysis.memoEdited),
-      savedAt: parsedAnalysis.savedAt ?? null,
-    }
-  } catch {
-    return defaultAnalysis
+  return {
+    id: savedAnalysis.id ?? null,
+    gateEvaluations: mergeSavedGates(savedAnalysis.gateEvaluations),
+    companyInfo: { ...defaultCompanyInfo, ...savedAnalysis.companyInfo },
+    investmentMemo: { ...defaultInvestmentMemo, ...savedAnalysis.investmentMemo },
+    memoEdited: Boolean(savedAnalysis.memoEdited),
+    savedAt: savedAnalysis.savedAt ?? null,
   }
 }
+
+const loadSavedAnalysis = (analysisId) =>
+  hydrateAnalysis(analysisId ? getWatchlistAnalysis(analysisId) : loadCurrentAnalysis())
 
 const getInvestmentClassification = (score) => {
   if (score >= 85) return 'Elite Compounder'
@@ -137,13 +139,25 @@ const buildInvestmentMemo = ({
 }
 
 function CompanyAnalysis() {
-  const initialAnalysis = useMemo(() => loadSavedAnalysis(), [])
+  const { analysisId: routeAnalysisId } = useParams()
+  const initialAnalysis = useMemo(() => loadSavedAnalysis(routeAnalysisId), [routeAnalysisId])
+  const [analysisId, setAnalysisId] = useState(initialAnalysis.id)
   const [gateEvaluations, setGateEvaluations] = useState(initialAnalysis.gateEvaluations)
   const [companyInfo, setCompanyInfo] = useState(initialAnalysis.companyInfo)
   const [memoEdited, setMemoEdited] = useState(initialAnalysis.memoEdited)
   const [investmentMemo, setInvestmentMemo] = useState(initialAnalysis.investmentMemo)
   const [savedAt, setSavedAt] = useState(initialAnalysis.savedAt)
   const [storageMessage, setStorageMessage] = useState(initialAnalysis.savedAt ? 'Saved analysis loaded.' : '')
+
+  useEffect(() => {
+    setAnalysisId(initialAnalysis.id)
+    setGateEvaluations(initialAnalysis.gateEvaluations)
+    setCompanyInfo(initialAnalysis.companyInfo)
+    setMemoEdited(initialAnalysis.memoEdited)
+    setInvestmentMemo(initialAnalysis.investmentMemo)
+    setSavedAt(initialAnalysis.savedAt)
+    setStorageMessage(initialAnalysis.savedAt ? 'Saved analysis loaded.' : '')
+  }, [initialAnalysis])
 
   const updateGate = (gateId, updates) => {
     setGateEvaluations((currentGates) =>
@@ -210,23 +224,43 @@ function CompanyAnalysis() {
     setMemoEdited(false)
   }
 
+  const createAnalysisId = () => {
+    const identity = companyInfo.ticker || companyInfo.companyName || 'analysis'
+    const slug = identity
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    return `${slug || 'analysis'}-${Date.now()}`
+  }
+
   const saveAnalysis = () => {
     const nextSavedAt = new Date().toISOString()
+    const nextAnalysisId = analysisId || createAnalysisId()
+    const memoToSave = memoEdited ? investmentMemo : generatedMemo
     const analysisToSave = {
+      id: nextAnalysisId,
       gateEvaluations,
       companyInfo,
-      investmentMemo,
+      investmentMemo: memoToSave,
       memoEdited,
       savedAt: nextSavedAt,
+      compositeScore,
+      classification,
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(analysisToSave))
+    saveCurrentAnalysis(analysisToSave)
+    upsertWatchlistAnalysis(analysisToSave)
+    setAnalysisId(nextAnalysisId)
+    setInvestmentMemo(memoToSave)
     setSavedAt(nextSavedAt)
-    setStorageMessage('Analysis saved locally.')
+    setStorageMessage('Analysis saved locally and added to Watchlist.')
   }
 
   const clearAnalysis = () => {
-    window.localStorage.removeItem(STORAGE_KEY)
+    clearCurrentAnalysis()
+    setAnalysisId(null)
     setGateEvaluations(gates)
     setCompanyInfo(defaultCompanyInfo)
     setInvestmentMemo(defaultInvestmentMemo)
