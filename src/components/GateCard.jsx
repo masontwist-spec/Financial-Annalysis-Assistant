@@ -15,7 +15,14 @@ const confidenceLabels = {
   high: 'High',
 }
 
-function GateCard({ gate, onChange }) {
+const evidenceLabelStyles = {
+  Strong: 'bg-emerald-900 text-white',
+  Healthy: 'bg-emerald-100 text-emerald-800',
+  Watch: 'bg-amber-100 text-amber-800',
+  Weak: 'bg-red-100 text-red-800',
+}
+
+function GateCard({ gate, onChange, suggestedEvidence = [] }) {
   const [isOpen, setIsOpen] = useState(false)
   const scoreLabel = gate.score != null ? gate.score : 'TBD'
   const confidenceLabel = gate.confidenceLevel ? confidenceLabels[gate.confidenceLevel] : 'Unassigned'
@@ -166,6 +173,41 @@ function GateCard({ gate, onChange }) {
                 </label>
               </div>
             </div>
+
+            {suggestedEvidence.length > 0 && (
+              <div className="lg:col-span-2">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-800">Suggested Evidence</h3>
+                      <p className="mt-2 text-sm text-emerald-900">
+                        Financial snapshot metrics that may inform this gate. Suggestions only; manual scoring remains unchanged.
+                      </p>
+                    </div>
+                    <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                      Evidence only
+                    </span>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                    {suggestedEvidence.map((metric) => (
+                      <article key={metric.name} className="rounded-lg border border-emerald-200 bg-white p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-700">{metric.name}</p>
+                            <p className="mt-1 text-2xl font-semibold text-slate-950">{metric.value}</p>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${evidenceLabelStyles[metric.label] ?? evidenceLabelStyles.Watch}`}>
+                            {metric.label}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-sm leading-6 text-slate-600">{metric.explanation}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Key questions</h3>

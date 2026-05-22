@@ -90,6 +90,122 @@ const financialSnapshotSections = [
   },
 ]
 
+const getEvidenceLabel = (metricKey, rawValue) => {
+  const value = Number.parseFloat(rawValue)
+
+  if (Number.isNaN(value)) return 'Watch'
+
+  if (metricKey === 'grossMargin') {
+    if (value >= 50) return 'Strong'
+    if (value >= 35) return 'Healthy'
+    if (value >= 20) return 'Watch'
+    return 'Weak'
+  }
+
+  if (metricKey === 'operatingMargin') {
+    if (value >= 25) return 'Strong'
+    if (value >= 15) return 'Healthy'
+    if (value >= 8) return 'Watch'
+    return 'Weak'
+  }
+
+  if (metricKey === 'roic') {
+    if (value >= 20) return 'Strong'
+    if (value >= 12) return 'Healthy'
+    if (value >= 7) return 'Watch'
+    return 'Weak'
+  }
+
+  if (metricKey === 'debtToEbitda') {
+    if (value <= 1) return 'Strong'
+    if (value <= 2.5) return 'Healthy'
+    if (value <= 4) return 'Watch'
+    return 'Weak'
+  }
+
+  if (metricKey === 'interestCoverage') {
+    if (value >= 15) return 'Strong'
+    if (value >= 6) return 'Healthy'
+    if (value >= 3) return 'Watch'
+    return 'Weak'
+  }
+
+  if (metricKey === 'peRatio' || metricKey === 'evToEbitda') {
+    if (value <= 15) return 'Strong'
+    if (value <= 25) return 'Healthy'
+    if (value <= 40) return 'Watch'
+    return 'Weak'
+  }
+
+  if (metricKey === 'freeCashFlowYield') {
+    if (value >= 5) return 'Strong'
+    if (value >= 3) return 'Healthy'
+    if (value >= 1.5) return 'Watch'
+    return 'Weak'
+  }
+
+  return 'Healthy'
+}
+
+const evidenceExplanations = {
+  grossMargin: 'Gross margin helps show pricing power, product mix quality, and room to absorb cost pressure.',
+  operatingMargin: 'Operating margin shows how efficiently revenue converts into operating profit after core expenses.',
+  freeCashFlow: 'Free cash flow indicates whether accounting earnings are converting into cash that can be reinvested or returned.',
+  roic: 'ROIC helps judge whether the company earns attractive returns on the capital required to operate.',
+  debtToEbitda: 'Debt / EBITDA gives a quick view of leverage relative to operating cash earnings.',
+  interestCoverage: 'Interest coverage helps assess whether operating profit can comfortably service debt costs.',
+  revenueStability: 'Revenue stability is useful for judging cyclicality, customer durability, and downside resilience.',
+  peRatio: 'P/E ratio gives a quick read on the market price relative to current earnings power.',
+  evToEbitda: 'EV / EBITDA helps compare valuation across companies with different capital structures.',
+  freeCashFlowYield: 'Free cash flow yield compares cash generation to market value and can indicate margin of safety.',
+}
+
+const evidenceLabels = {
+  grossMargin: 'Gross margin',
+  operatingMargin: 'Operating margin',
+  freeCashFlow: 'Free cash flow',
+  roic: 'ROIC',
+  debtToEbitda: 'Debt / EBITDA',
+  interestCoverage: 'Interest coverage',
+  revenueStability: 'Revenue stability',
+  peRatio: 'P/E ratio',
+  evToEbitda: 'EV / EBITDA',
+  freeCashFlowYield: 'Free cash flow yield',
+}
+
+const buildSuggestedEvidence = (financialData) => {
+  const createEvidence = (metricKey, fallbackValue = null) => {
+    const value = financialData[metricKey] ?? fallbackValue ?? 'Not available'
+
+    return {
+      name: evidenceLabels[metricKey],
+      value,
+      label: getEvidenceLabel(metricKey, value),
+      explanation: evidenceExplanations[metricKey],
+    }
+  }
+
+  return {
+    'business-model-quality': [
+      createEvidence('grossMargin'),
+      createEvidence('operatingMargin'),
+      createEvidence('freeCashFlow'),
+      createEvidence('roic'),
+    ],
+    'financial-strength': [
+      createEvidence('debtToEbitda'),
+      createEvidence('interestCoverage'),
+      createEvidence('freeCashFlow'),
+      createEvidence('revenueStability', 'Not available'),
+    ],
+    valuation: [
+      createEvidence('peRatio'),
+      createEvidence('evToEbitda'),
+      createEvidence('freeCashFlowYield'),
+    ],
+  }
+}
+
 const defaultAnalysis = {
   id: null,
   gateEvaluations: gates,
@@ -246,6 +362,7 @@ function CompanyAnalysis() {
         .filter(Boolean),
     [companyInfo.competitors],
   )
+  const suggestedEvidenceByGate = useMemo(() => buildSuggestedEvidence(mockFinancialData), [])
   const generatedMemo = useMemo(
     () =>
       buildInvestmentMemo({
@@ -757,7 +874,12 @@ function CompanyAnalysis() {
 
         <div className="grid gap-6">
           {gateEvaluations.map((gate) => (
-            <GateCard key={gate.id} gate={gate} onChange={updateGate} />
+            <GateCard
+              key={gate.id}
+              gate={gate}
+              onChange={updateGate}
+              suggestedEvidence={suggestedEvidenceByGate[gate.id] ?? []}
+            />
           ))}
         </div>
       </section>
