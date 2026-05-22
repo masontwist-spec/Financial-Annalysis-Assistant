@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import GateCard from '../components/GateCard'
 import { gates } from '../data/gates'
 
@@ -20,6 +20,64 @@ const getInvestmentClassification = (score) => {
   return 'Avoid'
 }
 
+const getFinalDecision = (score, concernFailGates) => {
+  if (score < 40) return 'Avoid'
+  if (score >= 70 && concernFailGates <= 1) return 'Buy'
+  if (score >= 55) return 'Watchlist'
+  return 'Research More'
+}
+
+const formatGateLine = (gate) => {
+  const score = gate.score != null ? `${gate.score}/10` : 'TBD'
+  const confidence = gate.confidenceLevel ? gate.confidenceLevel : 'unassigned'
+  const notes = gate.notes ? ` Notes: ${gate.notes}` : ''
+  const redFlags = gate.redFlags?.length ? ` Red flags: ${gate.redFlags.join('; ')}` : ''
+
+  return `${gate.title}: ${gate.status}, score ${score}, confidence ${confidence}.${notes}${redFlags}`
+}
+
+const buildInvestmentMemo = ({
+  companyInfo,
+  competitorsList,
+  gateEvaluations,
+  compositeScore,
+  classification,
+  finalDecision,
+}) => {
+  const companyName = companyInfo.companyName || 'This company'
+  const ticker = companyInfo.ticker ? ` (${companyInfo.ticker})` : ''
+  const industry = companyInfo.industry || 'an unspecified industry'
+  const competitorText = competitorsList.length ? competitorsList.join(', ') : 'not entered'
+  const passedGates = gateEvaluations.filter((gate) => ['Strong Pass', 'Pass'].includes(gate.status))
+  const concernGates = gateEvaluations.filter((gate) => ['Concern', 'Fail'].includes(gate.status))
+  const riskGate = gateEvaluations.find((gate) => gate.id === 'risk-assessment')
+  const allRedFlags = gateEvaluations.flatMap((gate) => gate.redFlags ?? [])
+  const strongestGates = passedGates.length
+    ? passedGates.map((gate) => `${gate.title} (${gate.status})`).join(', ')
+    : 'No gates are currently marked as passed.'
+  const weakestGates = concernGates.length
+    ? concernGates.map((gate) => `${gate.title} (${gate.status})`).join(', ')
+    : 'No gates are currently marked Concern or Fail.'
+
+  return {
+    companyOverview: `${companyName}${ticker} operates in ${industry}. Current price: ${
+      companyInfo.currentPrice || 'not entered'
+    }. Market cap: ${companyInfo.marketCap || 'not entered'}. Key competitors: ${competitorText}.`,
+    scoreSummary: `Final composite score: ${compositeScore}/100. Classification: ${classification}. Final decision: ${finalDecision}.`,
+    gateSummary: gateEvaluations.map(formatGateLine).join('\n'),
+    bullThesis: companyInfo.thesis
+      ? `${companyInfo.thesis}\n\nStrongest supporting gates: ${strongestGates}.`
+      : `Bull case is not fully written yet. Strongest supporting gates: ${strongestGates}.`,
+    bearThesis: `Primary pushback: ${weakestGates}. ${
+      allRedFlags.length ? `Red flags to investigate: ${allRedFlags.join('; ')}.` : 'No red flags have been entered yet.'
+    }`,
+    keyRisks: riskGate
+      ? formatGateLine(riskGate)
+      : 'Risk assessment gate has not been configured yet.',
+    finalDecision,
+  }
+}
+
 function CompanyAnalysis() {
   const [gateEvaluations, setGateEvaluations] = useState(gates)
   const [companyInfo, setCompanyInfo] = useState({
@@ -30,6 +88,16 @@ function CompanyAnalysis() {
     competitors: '',
     currentPrice: '',
     marketCap: '',
+  })
+  const [memoEdited, setMemoEdited] = useState(false)
+  const [investmentMemo, setInvestmentMemo] = useState({
+    companyOverview: '',
+    scoreSummary: '',
+    gateSummary: '',
+    bullThesis: '',
+    bearThesis: '',
+    keyRisks: '',
+    finalDecision: 'Research More',
   })
 
   const updateGate = (gateId, updates) => {
@@ -56,10 +124,46 @@ function CompanyAnalysis() {
   const classification = getInvestmentClassification(compositeScore)
   const gatesPassed = gateEvaluations.filter((gate) => ['Strong Pass', 'Pass'].includes(gate.status)).length
   const concernFailGates = gateEvaluations.filter((gate) => ['Concern', 'Fail'].includes(gate.status)).length
-  const competitorsList = companyInfo.competitors
-    .split(',')
-    .map((competitor) => competitor.trim())
-    .filter(Boolean)
+  const finalDecision = getFinalDecision(compositeScore, concernFailGates)
+  const competitorsList = useMemo(
+    () =>
+      companyInfo.competitors
+        .split(',')
+        .map((competitor) => competitor.trim())
+        .filter(Boolean),
+    [companyInfo.competitors],
+  )
+  const generatedMemo = useMemo(
+    () =>
+      buildInvestmentMemo({
+        companyInfo,
+        competitorsList,
+        gateEvaluations,
+        compositeScore,
+        classification,
+        finalDecision,
+      }),
+    [companyInfo, competitorsList, gateEvaluations, compositeScore, classification, finalDecision],
+  )
+
+  useEffect(() => {
+    if (!memoEdited) {
+      setInvestmentMemo(generatedMemo)
+    }
+  }, [generatedMemo, memoEdited])
+
+  const updateMemo = (field, value) => {
+    setMemoEdited(true)
+    setInvestmentMemo((currentMemo) => ({
+      ...currentMemo,
+      [field]: value,
+    }))
+  }
+
+  const refreshMemo = () => {
+    setInvestmentMemo(generatedMemo)
+    setMemoEdited(false)
+  }
 
   return (
     <div className="space-y-8">
@@ -244,6 +348,97 @@ function CompanyAnalysis() {
             <p className="mt-3 text-5xl font-black">{concernFailGates}</p>
             <p className="mt-2 font-bold text-neutral-800">Gates needing attention</p>
           </div>
+        </div>
+      </section>
+
+      <section className="pixel-panel overflow-hidden">
+        <div className="flex flex-col gap-3 border-b-2 border-black bg-[#fffbe6] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="pixel-title text-xl font-black lowercase">investment_memo</p>
+          <button
+            type="button"
+            onClick={refreshMemo}
+            className="border-2 border-black bg-black px-4 py-2 text-sm font-black uppercase tracking-[0.12em] text-[#fffdfa] transition hover:bg-neutral-800"
+          >
+            Refresh draft
+          </button>
+        </div>
+
+        <div className="grid gap-4 p-6 xl:grid-cols-2">
+          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Company overview</span>
+            <textarea
+              value={investmentMemo.companyOverview}
+              onChange={(event) => updateMemo('companyOverview', event.target.value)}
+              rows="4"
+              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+            />
+          </label>
+
+          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Final score & classification</span>
+            <textarea
+              value={investmentMemo.scoreSummary}
+              onChange={(event) => updateMemo('scoreSummary', event.target.value)}
+              rows="4"
+              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+            />
+          </label>
+
+          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4 xl:col-span-2">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Gate-by-gate summary</span>
+            <textarea
+              value={investmentMemo.gateSummary}
+              onChange={(event) => updateMemo('gateSummary', event.target.value)}
+              rows="8"
+              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+            />
+          </label>
+
+          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Bull thesis</span>
+            <textarea
+              value={investmentMemo.bullThesis}
+              onChange={(event) => updateMemo('bullThesis', event.target.value)}
+              rows="6"
+              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+            />
+          </label>
+
+          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Bear thesis</span>
+            <textarea
+              value={investmentMemo.bearThesis}
+              onChange={(event) => updateMemo('bearThesis', event.target.value)}
+              rows="6"
+              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+            />
+          </label>
+
+          <label className="space-y-2 border-2 border-black bg-[#fffbe6] p-4">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Key risks</span>
+            <textarea
+              value={investmentMemo.keyRisks}
+              onChange={(event) => updateMemo('keyRisks', event.target.value)}
+              rows="5"
+              className="w-full resize-y border-2 border-black bg-white px-3 py-2 font-bold text-black outline-none focus:bg-[#c9ff7a]"
+            />
+          </label>
+
+          <label className="space-y-2 border-2 border-black bg-[#c9ff7a] p-4">
+            <span className="block text-sm font-black uppercase tracking-[0.15em] text-neutral-700">Final decision</span>
+            <select
+              value={investmentMemo.finalDecision}
+              onChange={(event) => updateMemo('finalDecision', event.target.value)}
+              className="w-full border-2 border-black bg-white px-3 py-2 font-black text-black outline-none focus:bg-[#fffbe6]"
+            >
+              {['Buy', 'Watchlist', 'Avoid', 'Research More'].map((decision) => (
+                <option key={decision} value={decision}>
+                  {decision}
+                </option>
+              ))}
+            </select>
+            <p className="mt-4 border-2 border-black bg-white p-4 text-3xl font-black">{investmentMemo.finalDecision}</p>
+          </label>
         </div>
       </section>
 
