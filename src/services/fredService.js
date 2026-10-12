@@ -4,7 +4,7 @@ const fetchObservations = async (seriesId, limit, sortOrder = 'desc') => {
   const apiKey = import.meta.env.VITE_FRED_API_KEY
   if (!apiKey) throw new Error('Missing VITE_FRED_API_KEY in .env')
 
-  const url = new URL(`${FRED_BASE}/series/observations`)
+  const url = new URL(`${FRED_BASE}/series/observations`, window.location.origin)
   url.searchParams.set('series_id', seriesId)
   url.searchParams.set('api_key', apiKey)
   url.searchParams.set('file_type', 'json')
