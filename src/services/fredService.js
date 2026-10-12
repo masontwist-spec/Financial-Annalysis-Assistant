@@ -1,4 +1,4 @@
-const FRED_BASE = 'https://api.stlouisfed.org/fred'
+const FRED_BASE = '/fred-api'
 
 const fetchObservations = async (seriesId, limit, sortOrder = 'desc') => {
   const apiKey = import.meta.env.VITE_FRED_API_KEY
