@@ -33,9 +33,9 @@ textarea {
 }
 
 .pixel-panel {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  @apply border border-slate-200 bg-white;
 }
 
 .pixel-card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  @apply border border-slate-200 bg-white;
 }

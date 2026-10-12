@@ -1,47 +1,71 @@
 import { Link, NavLink } from 'react-router-dom'
 
-const navItems = [
-  { label: 'Dashboard', path: '/' },
-  { label: 'Yield Curve', path: '/yield-curve' },
-  { label: 'Inflation', path: '/inflation' },
-  { label: 'Fed Policy', path: '/fed-policy' },
+const NAV_SECTIONS = [
+  {
+    label: 'Overview',
+    items: [{ label: 'Dashboard', path: '/' }],
+  },
+  {
+    label: 'Deep Dives',
+    items: [
+      { label: 'Yield Curve', path: '/yield-curve' },
+      { label: 'Inflation', path: '/inflation' },
+      { label: 'Fed Policy', path: '/fed-policy' },
+    ],
+  },
 ]
 
 function NavBar() {
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur lg:hidden">
-        <Link to="/" className="text-lg font-bold text-slate-950">MacroLab</Link>
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+        <Link to="/" className="text-sm font-bold uppercase tracking-widest text-slate-950">MacroLab</Link>
       </header>
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-slate-200 bg-slate-950 px-5 py-6 text-white lg:flex lg:flex-col">
-        <Link to="/" className="block">
-          <p className="text-xl font-bold tracking-tight">MacroLab</p>
-          <p className="mt-1.5 text-sm leading-5 text-slate-400">Macro economics for finance students</p>
-        </Link>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-slate-800 bg-slate-950 lg:flex lg:flex-col">
+        <div className="border-b border-slate-800 px-5 py-4">
+          <Link to="/">
+            <p className="text-sm font-bold uppercase tracking-widest text-white">MacroLab</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Economic Dashboard
+            </p>
+          </Link>
+        </div>
 
-        <nav className="mt-10 space-y-1 text-sm font-semibold">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              className={({ isActive }) =>
-                `flex items-center rounded-lg px-3 py-2.5 transition ${
-                  isActive
-                    ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/25'
-                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                {section.label}
+              </p>
+              <div className="space-y-px">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/'}
+                    className={({ isActive }) =>
+                      `flex items-center border-l-2 px-3 py-2.5 text-sm font-semibold transition ${
+                        isActive
+                          ? 'border-l-emerald-500 bg-white/5 text-white'
+                          : 'border-l-transparent text-slate-400 hover:border-l-slate-600 hover:bg-white/5 hover:text-slate-200'
+                      }`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
-        <div className="mt-auto rounded-xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Data Source</p>
-          <p className="mt-2 text-sm text-slate-300">Federal Reserve FRED API — free, official government data updated in real time.</p>
+        <div className="border-t border-slate-800 px-5 py-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">FRED API — Live</p>
+          </div>
+          <p className="mt-0.5 text-[10px] text-slate-600">Federal Reserve Economic Data</p>
         </div>
       </aside>
     </>
