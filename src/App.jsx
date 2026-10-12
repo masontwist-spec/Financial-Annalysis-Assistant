@@ -1,10 +1,9 @@
 import { Routes, Route } from 'react-router-dom'
 import NavBar from './components/NavBar'
 import Home from './pages/Home'
-import Dashboard from './pages/Dashboard'
-import CompanyAnalysis from './pages/CompanyAnalysis'
-import Watchlist from './pages/Watchlist'
-import Settings from './pages/Settings'
+import YieldCurve from './pages/YieldCurve'
+import Inflation from './pages/Inflation'
+import FedPolicy from './pages/FedPolicy'
 
 function App() {
   return (
@@ -13,11 +12,9 @@ function App() {
       <main className="px-4 py-6 sm:px-6 lg:ml-72 lg:px-8">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/company" element={<CompanyAnalysis />} />
-          <Route path="/company/:analysisId" element={<CompanyAnalysis />} />
-          <Route path="/watchlist" element={<Watchlist />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/yield-curve" element={<YieldCurve />} />
+          <Route path="/inflation" element={<Inflation />} />
+          <Route path="/fed-policy" element={<FedPolicy />} />
         </Routes>
       </main>
     </div>
